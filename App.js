@@ -3,21 +3,21 @@ import React,{useState,useEffect} from 'react';
 import axios from 'axios';
 
 import { StyleSheet,SafeAreaView, Text,Image, FlatList, View , TextInput, Button,FormControl, TouchableOpacity, Pressable, Form} from 'react-native';
-import Details from'./components/Details'
-const API_URL="https://api.themoviedb.org/3/movie/popular?api_key=dbd1168e4b7b2f9cca7c17bc58925157";
-const API_SEARCH="https://api.themoviedb.org/3/search/movie?api_key=dbd1168e4b7b2f9cca7c17bc58925157&query";
+
+const SEARCH_URL = "https://api.themoviedb.org/3/search/person?api_key=" + API_KEY + "&query=";
+const CREDITS_URL = "https://api.themoviedb.org/3/person/{person_id}/movie_credits?api_key=" + API_KEY;
 const API_KEY= 'dbd1168e4b7b2f9cca7c17bc58925157'
- function App()  {
+function App()  {
   const [searchTerm, setSearchTerm] = useState('');
   const [movies, setMovies] = useState([]);
 
-
   const handleSearch = async () => {
     try {
-      const response = await axios.get(`https://api.themoviedb.org/3/search/movie?api_key=dbd1168e4b7b2f9cca7c17bc58925157&query=${searchTerm}&language=fr&page=1&limit=1`);
-      const moviesWithKey = response.data.results[0];
-      console.log(moviesWithKey)
-      setMovies([moviesWithKey]);
+      const searchResponse = await axios.get(`https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${searchTerm}&language=fr`);
+      const person = searchResponse.data.results[0];
+      const creditsResponse = await axios.get(`https://api.themoviedb.org/3/person/${person.id}/movie_credits?api_key=${API_KEY}&language=fr`);
+      const moviesWithKey = creditsResponse.data.crew;
+      setMovies(moviesWithKey);
     } catch (err) {
       console.log(err);
     }
@@ -27,18 +27,19 @@ const API_KEY= 'dbd1168e4b7b2f9cca7c17bc58925157'
   return (
     <>
     <View style={styles.container}>
-      <Text style={styles.mytext}>Bienvenue sur Simplix, rechercher un film par nom</Text>
+      <Text style={styles.mytext}>Bienvenue sur Simplix, rechercher par son réalisateur</Text>
       <TextInput style={styles.input}
          
         onChangeText={text => setSearchTerm(text)}
         value={searchTerm}
-        placeholder="Search for movies"
+        placeholder="Chercher par réalisateur"
       />
-      <Button style={styles.button} title="Search" onPress={handleSearch} />
-      <FlatList 
+      <Button style={styles.button} title="Rechercher" onPress={handleSearch} />
+      <FlatList style={styles.flatList}
         data={movies}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.movieContainer}>
+          <View key={item.id} style={styles.movieContainer}>
             <Text style={styles.movieTitle}>Titre originale:  {item.original_title}</Text>
             <Text style={styles.movieInfo}>Date de sortie: {item.release_date}</Text>
             <Text style={styles.movieInfo}>Résumé: {item.overview}</Text>
@@ -106,7 +107,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 5,
-    width: '100%'
+    width: '100%',
+    alignItems: 'center',
   },
   movieTitle: {
     fontSize: 22,
@@ -120,9 +122,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   movieImage: {
-    width: '100%',
+    width: '80%',
     height: 300,
     borderRadius: 5,
-    margin: 10
-  }
+    margin: 10,
+    resizeMode: 'contain'
+  },
+  flatList: {
+    alignSelf: 'center',
+    width: '90%'
+}
 });
