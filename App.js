@@ -53,8 +53,8 @@ function App()  {
           renderItem={({ item }) => (
             <View key={item.id} style={styles.movieContainer}>
               <Text style={styles.movieTitle}>Titre originale:  {item.original_title}</Text>
-              <Text style={styles.movieInfo}>Date de sortie: {item.release_date}</Text>
-              <Text style={styles.movieInfo}>Résumé: {item.overview}</Text>
+              <Text style={styles.movieInfo}>Date de sortie: {new Date(item.release_date).getDate().toString().padStart(2, '0')} - {(new Date(item.release_date).getMonth() + 1).toString().padStart(2, '0')} - {new Date(item.release_date).getFullYear()}</Text>
+              <Text style={styles.movieInfo}>Résumé: {item.overview ? item.overview : "Pas de résumé disponible"}</Text>
               <Text style={styles.movieInfo} >Popularité: {item.popularity}</Text>
               <Text style={styles.movieInfo}>Note globale: {item.vote_average} / 10</Text>
               <Image style={styles.movieImage} source={{uri: "https://image.tmdb.org/t/p/w500"+ item.poster_path}}></Image>
