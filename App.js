@@ -1,18 +1,25 @@
-import { StatusBar } from 'expo-status-bar';
+
 import React,{useState,useEffect} from 'react';
 import axios from 'axios';
 
-import { StyleSheet,SafeAreaView, Text,Image, FlatList, View , TextInput, Button,FormControl, TouchableOpacity, Pressable, Form} from 'react-native';
+import { StyleSheet, Text,Image, FlatList, View , TextInput, Button, ActivityIndicator} from 'react-native';
 
-const SEARCH_URL = "https://api.themoviedb.org/3/search/person?api_key=" + API_KEY + "&query=";
-const CREDITS_URL = "https://api.themoviedb.org/3/person/{person_id}/movie_credits?api_key=" + API_KEY;
+
 const API_KEY= 'dbd1168e4b7b2f9cca7c17bc58925157'
 function App()  {
   const [searchTerm, setSearchTerm] = useState('');
   const [movies, setMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSearch = async () => {
+    setError(null); //clear previous error message
+    if (!searchTerm) {
+      setError({ message: "Aucun réalisateur spécifié." });
+      return;
+    }
     try {
+      setIsLoading(true);
       const searchResponse = await axios.get(`https://api.themoviedb.org/3/search/person?api_key=${API_KEY}&query=${searchTerm}&language=fr`);
       const person = searchResponse.data.results[0];
       const creditsResponse = await axios.get(`https://api.themoviedb.org/3/person/${person.id}/movie_credits?api_key=${API_KEY}&language=fr`);
@@ -20,116 +27,121 @@ function App()  {
       setMovies(moviesWithKey);
     } catch (err) {
       console.log(err);
+    }finally {
+      setIsLoading(false);
     }
+    setSearchTerm('');
   };
 
 
   return (
     <>
-    <View style={styles.container}>
-      <Text style={styles.mytext}>Bienvenue sur Simplix, rechercher par son réalisateur</Text>
-      <TextInput style={styles.input}
-         
-        onChangeText={text => setSearchTerm(text)}
-        value={searchTerm}
-        placeholder="Chercher par réalisateur"
-      />
-      <Button style={styles.button} title="Rechercher" onPress={handleSearch} />
-      <FlatList style={styles.flatList}
-        data={movies}
-        keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => (
-          <View key={item.id} style={styles.movieContainer}>
-            <Text style={styles.movieTitle}>Titre originale:  {item.original_title}</Text>
-            <Text style={styles.movieInfo}>Date de sortie: {item.release_date}</Text>
-            <Text style={styles.movieInfo}>Résumé: {item.overview}</Text>
-            <Text style={styles.movieInfo} >Popularité: {item.popularity}</Text>
-            <Text style={styles.movieInfo}>Note globale: {item.vote_average} / 10</Text>
-            <Image style={styles.movieImage} source={{uri: "https://image.tmdb.org/t/p/w500"+ item.poster_path}}></Image>
-          </View>
-        )}
-      />
-    </View>
-
-      
+      <View style={styles.container}>
+        <Text style={styles.mytext}>Bienvenue sur Simplix, recherchez des films par leur réalisateur</Text>
+        <TextInput style={styles.input}
+          onChangeText={text => setSearchTerm(text)}
+          value={searchTerm}
+          placeholder="Chercher par réalisateur"
+        />
+        <Button style={styles.button} title="Rechercher" onPress={handleSearch} />
+        {isLoading && <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /><Text style={styles.loadingText}>Loading...</Text></View>}
+        {error && <View style={styles.errorContainer}><Text style={styles.errorText}>{error.message}</Text></View>}
+        {movies.length === 0 && !isLoading && !error && <Text style={styles.noResultsText}>No results found</Text>}
+        <FlatList style={styles.flatList}
+          data={movies}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View key={item.id} style={styles.movieContainer}>
+              <Text style={styles.movieTitle}>Titre originale:  {item.original_title}</Text>
+              <Text style={styles.movieInfo}>Date de sortie: {item.release_date}</Text>
+              <Text style={styles.movieInfo}>Résumé: {item.overview}</Text>
+              <Text style={styles.movieInfo} >Popularité: {item.popularity}</Text>
+              <Text style={styles.movieInfo}>Note globale: {item.vote_average} / 10</Text>
+              <Image style={styles.movieImage} source={{uri: "https://image.tmdb.org/t/p/w500"+ item.poster_path}}></Image>
+            </View>
+          )}
+        />
+      </View>
     </>
-   
   );
 }
 
-export default App;
 
-//dbd1168e4b7b2f9cca7c17bc58925157
+export default App;
 
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: 20
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    padding: 10,
-    margin: 10,
-    borderWidth: 1,
-    borderColor: 'black',
-    borderRadius: 5,
-    fontSize: 18,
-    color: 'black',
-    backgroundColor: 'white'
+    padding: 24,
+    backgroundColor: '#f0f0f0',
   },
   mytext: {
     fontSize: 18,
-    color: 'black',
-    textAlign: 'center',
-    margin: 10
+    marginBottom: 18,
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#e50914',
-    borderRadius: 5,
+    backgroundColor: '#0066c0',
+    padding: 12,
+    borderRadius: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    margin: 10,
   },
-  buttonText: {
-    color: 'white',
+  loadingText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    marginBottom: 24,
   },
-  movieContainer: {
-    margin: 10,
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 5,
-    width: '100%',
+  errorContainer: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  movieTitle: {
-    fontSize: 22,
-    color: 'black',
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  movieInfo: {
+  errorText: {
+    color: 'red',
     fontSize: 18,
-    color: 'black',
-    marginBottom: 10,
+    marginBottom: 24,
   },
-  movieImage: {
-    width: '80%',
-    height: 300,
-    borderRadius: 5,
-    margin: 10,
-    resizeMode: 'contain'
+  noResultsText: {
+    fontSize: 18,
+    marginBottom: 24,
   },
   flatList: {
-    alignSelf: 'center',
-    width: '90%'
-}
+    flex: 1,
+    marginTop: 24,
+  },
+  movieContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 24,
+    marginBottom: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  movieTitle: {
+    fontSize: 18,
+    marginBottom: 18,
+  },
+  movieInfo: {
+    fontSize: 14,
+    marginBottom: 18,
+  },
+  movieImage: {
+    width: '100%',
+    height: 400,
+    resizeMode: 'contain',
+    marginBottom: 18,
+  },
+
 });
